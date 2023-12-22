@@ -1,0 +1,48 @@
+name: Get confirmed issues from portal
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  fetch-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Retrieve Confirmed Issues
+        id: get-issues
+        run: |
+          
+          # Make a request to the external system's API
+          API_URL="${PORTAL_URL}/api/v1/findings/?repository__icontains=${{ github.repository }}&triage_status=verified"
+          CONFIRMED_ISSUES=$(curl -s -H "Authorization: Token $PORTAL_TOKEN" $API_URL)
+
+          if [[ ! $CONFIRMED_ISSUES =~ "results" ]]
+          then
+            gh pr comment ${{ github.event.number }} -b "Nice, there are no verified security issues"
+            exit 0
+          fi
+
+          pretty_issues=$(echo $CONFIRMED_ISSUES | jq -r --arg JQ_PORTAL_URL "$PORTAL_URL" ' .results[] | "
+            [**Whitespots Portal Finding**](\($JQ_PORTAL_URL)/findings/\(.id))\n
+            **Title**: \(.name)\n
+            **Description**\n\(.description)\n 
+            **File path**: \(.file_path):\(.line)\n
+            **Scanner**: \(.related_objects_meta.scanner.name)\n
+            **Jira Task in product team space**: \(.jira_prod_task_key)\n
+            **Jira Task in security team space**: \(.jira_sec_task_key)\n
+            -----------------------------------------------\n
+          "')
+          
+          echo "## External System Issues" > comment_body.txt
+          echo "$pretty_issues" >> comment_body.txt
+          
+          gh pr comment ${{ github.event.number }} -b "$(cat comment_body.txt)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          PORTAL_TOKEN: ${{ secrets.PORTAL_TOKEN }}
+          PORTAL_URL: ${{ vars.PORTAL_URL }}
