@@ -43,6 +43,6 @@ jobs:
           
           gh pr comment ${{ github.event.number }} -b "$(cat comment_body.txt)"
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PORTAL_TOKEN: ${{ secrets.PORTAL_TOKEN }}
           PORTAL_URL: ${{ vars.PORTAL_URL }}
