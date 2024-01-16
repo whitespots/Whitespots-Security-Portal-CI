@@ -1,4 +1,4 @@
-name: Get confirmed issues from portal
+name: Comment pull request with confirmed issues from portal
 
 on:
   pull_request:
