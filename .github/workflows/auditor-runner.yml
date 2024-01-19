@@ -1,0 +1,34 @@
+name: Auditor runner
+
+on: 
+  workflow_call:
+    secrets:
+      PORTAL_TOKEN:
+        required: true
+      GIT_TOKEN:
+        required: true
+    inputs:
+      PORTAL_URL:
+        type: string
+        required: true
+      SEQUENCE:
+        type: string
+
+jobs:
+  auditor-runner:
+    runs-on: ubuntu-latest
+    env:
+      PORTAL_TOKEN: ${{ secrets.PORTAL_TOKEN }}
+      PORTAL_URL: ${{ vars.PORTAL_URL }}
+      GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+      REPO_NAME: ${{ github.repository }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          repository: whitespots/Whitespots-Security-Portal-CI
+          token: ${{ env.GIT_TOKEN }}
+      - name: Run audit for current repository
+        run: |
+          apt-get update && apt-get install python3
+          python3 auditor.py
